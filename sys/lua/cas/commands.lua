@@ -18,7 +18,7 @@ cas.cmds["!help"] = {
 	admin = false,
 	func = function(id, arguments)
 		cas.cmsg2(id, "\169255255255----- Commands -----")
-		for cmd in pairs(cas.commands) do
+		for cmd in pairs(cas.cmds) do
 			local syntax = ""
 			local alias = ""
 			if cas.cmds[cmd]["syntax"] ~= "" then

@@ -134,7 +134,7 @@ function cas.hook.endround(mode)
 		msg(cas.nick(key) .. " \169000255150highest damage \169150255000" .. val .. " HP")
 	end
 
-	if cas.round ~= 1 or cas.round ~= cas.mr + 1 then
+	if cas.round ~= 1 and cas.round ~= cas.mr + 1 then
 		val, key = cas.highest_val(cas.total)
 		if val > 0 then
 			msg(cas.nick(key) .. " \169000255150highest total damage \169150255000" .. val .. " HP")

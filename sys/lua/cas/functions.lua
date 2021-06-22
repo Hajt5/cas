@@ -183,6 +183,7 @@ function cas.process(id, cmd, txt)
 	local cmdarg = cmd .. " " .. table.concat(arguments, " ")
 	if cas.cmds[cmd].alert == true then
 		msg(cas.nick(id) .. " \169000255150used command \169150255000" .. cmdarg)
+		cas.pnt("cmd", id, cmdarg)
 	end
 end
 
@@ -239,6 +240,7 @@ function cas.say(id, message, sayteam)
 				msg2(v, txt)
 			end
 		end
+		cas.pnt("sayteam", id, message)
 		return 1
 	end
 
@@ -252,6 +254,7 @@ function cas.say(id, message, sayteam)
 		msg(txt)
 	end
 	
+	cas.pnt("say", id, message)
 	return 1
 end
 
@@ -259,8 +262,8 @@ function cas.votemap_minutes_info()
 	if cas.vote > 0 then
 		return
 	end
-	local seconds = cas.votemap_minutes_countdown - os.time()
-	msg("\169000255150Vote for next map will start in \169150255000" .. cas.time(seconds))
+	local sec = cas.votemap_minutes_countdown - os.time()
+	msg("\169000255150Vote for next map will start in \169150255000" .. cas.time(sec))
 end
 
 function cas.votemap_minutes_over(parameter)
@@ -557,9 +560,7 @@ end
 
 function cas.savelog()
 	local file = io.open(cas.path .. "logs/" .. cas.logfile .. ".txt", "a")
-	for i = 1, #cas.logs do
-		file:write(cas.logs[i] .. "\n")
-	end
+	file:write(table.concat(cas.logs, "\n") .. "\n")
 	file:close()
 	cas.logs = {}
 end
