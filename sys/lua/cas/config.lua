@@ -7,20 +7,20 @@ cas.adminlist = {
 	173424, 14545, 57114
 }
 
--- Set $16000 for each player at round start
-cas.always16k = false
+-- Set $16000 on player spawn
+cas.spawn_16k = false
 
 -- Enable mixmatch features
 cas.mixmatch = true
+
+-- Upload logs to cs2d.eu (requires curl)
+cas.upload_logs = true
 
 -- Number of players needed to start mixmatch
 cas.required = 10
 
 -- Number of rounds needed to start halftime
 cas.mr = 15
-
--- Enable uploading logs after mixmatch ends
-cas.upload_logs = true
 
 -- Number of rounds to start votemap (0 disabled)
 cas.votemap_rounds = 0
@@ -38,11 +38,4 @@ cas.mappool = {
 	"de_tuscanpod", "icc_dust2", "de_dust2_source", "icc_cima", "de_infernopod",
 	"icc_cima_beta", "pcs_arno", "sf_mirage", "de_cima", "de_vertigo",
 	"de_cobblestone", "de_kabul", "de_inferno_eu", "de_dust2", "de_inferno"
-}
-
--- List of files to check while joining the server
-cas.check_files = {
-	["sfx/player/hit1.wav"] = "1ff855e59dc1d55fbdd899b3734bf65747078f41738b7ebdb1e6fdda54298e6b",
-	["sfx/player/hit2.wav"] = "bb2b7393b580220df80966a5d4ed89c1f4eaa7e0d4690f27221e9dc021c4d9f2",
-	["sfx/player/hit3.wav"] = "ebabd453fd91ef46f4067720bedf2ff51140e1d0f9f5cafd29c530c29bfddd4a"
 }

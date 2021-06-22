@@ -1,8 +1,7 @@
 function cas.pnt(...)
-	if cas.mixmatch == 0 then
-		return
+	if cas.matchnow == true then
+		table.insert(cas.logs, table.concat({...}, ","))
 	end
-	table.insert(cas.logs, table.concat({...}, ","))
 end
 
 function cas.split(s, sep)
@@ -34,12 +33,12 @@ function cas.nick(id)
 	end
 end
 
-function cas.escape(text)
-	text:gsub("^%s*(.-)%s*$", "%1")
-	while text:sub(-2) == "@C" do
-		text = text:sub(1, -3)
+function cas.escape(txt)
+	txt:gsub("^%s*(.-)%s*$", "%1")
+	while txt:sub(-2) == "@C" do
+		txt = txt:sub(1, -3)
 	end
-	return text
+	return txt
 end
 
 function cas.swap()
@@ -98,7 +97,6 @@ function cas.highest_val(arr)
 end
 
 function cas.time(seconds)
-	local seconds = tonumber(seconds)
 	if seconds <= 0 then
 		return "00:00"
 	end
@@ -109,8 +107,8 @@ function cas.time(seconds)
 end
 
 function cas.hud(id)
-	local txt1 = ""
-	local txt2 = ""
+	local txt1, txt2
+
 	if cas.knives == true then
 		txt1 = "Knife Round"
 		txt2 = "Buying disabled"
@@ -124,13 +122,16 @@ function cas.hud(id)
 		end
 		txt1 = "Warmup"
 		txt2 = table.concat(weapons, " + ")
-	elseif cas.mixmatch == 1 then
-		if cas.status == "1st Half" or cas.status == "2nd Half" then
-			txt1 = cas.status
+	elseif cas.mixmatch == true then
+		if cas.state == 1 then
+			txt1 ="1st Half"
 			txt2 = "Round " .. cas.round .. "/" .. cas.mr * 2
-		elseif cas.status == "Halftime" then
-			txt1 = cas.status
+		elseif cas.state == 2 then
+			txt1 = "Halftime"
 			txt2 = "Prepare to fight"
+		elseif cas.state == 3 then
+			txt1 = "2nd Half"
+			txt2 = "Round " .. cas.round .. "/" .. cas.mr * 2
 		else
 			txt1 = "Match not started"
 			txt2 = "Requires " .. cas.required .. " players to start"
@@ -144,10 +145,11 @@ function cas.hud(id)
 	parse("hudtxt2 " .. id .. ' 198 "\169000255150' .. txt2 .. '" ' .. x .. " 20 1 0 14")
 end
 
-function cas.pntdamage(id)
-	if cas.damage[id] > 0 and cas.con[id] == true then
-		cas.pnt("d", id, cas.damage[id])
+function cas.dmg(id)
+	if cas.con[id] == false or cas.damage[id] == 0 then
+		return
 	end
+	cas.pnt("damage", id, cas.damage[id])
 end
 
 function cas.process(id, cmd, txt)
@@ -158,20 +160,20 @@ function cas.process(id, cmd, txt)
 		end
 	end
 
-	if cas.commands[cmd].admin == true and cas.admin[id] == false then
+	if cas.cmds[cmd].admin == true and cas.admin[id] == false then
 		msg2(id, "\169000255150You do not have access to admin commands")
 		return
 	end
 
-	if cas.commands[cmd].maxarg ~= false and cas.commands[cmd].maxarg < #arguments then
+	if cas.cmds[cmd].maxarg ~= false and cas.cmds[cmd].maxarg < #arguments then
 		msg2(id, "\169000255150You have entered too many arguments")
 		return
 	end
 
-	local ret = cas.commands[cmd].func(id, arguments)
+	local ret = cas.cmds[cmd].func(id, arguments)
 	if ret ~= nil then
 		if ret == false then
-			msg2(id, "\169000255150Correct syntax is \169150255000" .. cmd .. " " .. cas.commands[cmd].syntax)
+			msg2(id, "\169000255150Correct syntax is \169150255000" .. cmd .. " " .. cas.cmds[cmd].syntax)
 		else
 			msg2(id, "\169000255150" .. ret)
 		end
@@ -179,7 +181,7 @@ function cas.process(id, cmd, txt)
 	end
 
 	local cmdarg = cmd .. " " .. table.concat(arguments, " ")
-	if cas.commands[cmd].alert == true then
+	if cas.cmds[cmd].alert == true then
 		msg(cas.nick(id) .. " \169000255150used command \169150255000" .. cmdarg)
 	end
 end
@@ -203,7 +205,7 @@ function cas.say(id, message, sayteam)
 			cmd = sc
 		end
 
-		if not cas.commands[cmd] then
+		if not cas.cmds[cmd] then
 			msg2(id, "\169000255150Command does not exist")
 			return 1
 		end
@@ -254,10 +256,10 @@ function cas.say(id, message, sayteam)
 end
 
 function cas.votemap_minutes_info()
-	if cas.vote == true then
+	if cas.vote > 0 then
 		return
 	end
-	local seconds = cas.votemap_minutes_countdown - os.time(os.date("!*t"))
+	local seconds = cas.votemap_minutes_countdown - os.time()
 	msg("\169000255150Vote for next map will start in \169150255000" .. cas.time(seconds))
 end
 
@@ -266,16 +268,16 @@ function cas.votemap_minutes_over(parameter)
 		return
 	end
 
-	if parameter == "startvote" and cas.vote == false then
-		cas.vote = true
+	if parameter == "startvote" and cas.vote == 0 then
+		cas.vote = 1
 		parse("sv_sound hajt/countdown.ogg")
-		timer(3000, "cas.startvote", "votemap")
+		timer(3000, "cas.startvote")
 		return
 	end
 
-	cas.votemap_minutes_countdown = os.time(os.date("!*t")) + (cas.votemap_minutes * 60)
+	cas.votemap_minutes_countdown = os.time() + (cas.votemap_minutes * 60)
 	timer(cas.votemap_minutes * 60000 - 3000, "cas.votemap_minutes_over", "startvote", 0)
-	timer(45000, "cas.votemap_minutes_info", 0)
+	timer(45000, "cas.votemap_minutes_info", "", 0)
 end
 
 function cas.percentage(opt)
@@ -296,61 +298,61 @@ function cas.percentage(opt)
 	return math.floor(votes / total_votes * 100) .. "%"
 end
 
-function cas.showhud(votetype)
+function cas.votehud()
 	local plist = player(0, "table")
 	for _, id in pairs(plist) do
 		local x = 5
 		local y = player(id, "screenh") / 2 - 100
-		local textId = 100
+		local txtid = 100
 
-		local text
-		if votetype == "votemap" then
-			text = "\169000255150Vote for next map"
-		elseif votetype == "votecpt" then
-			text = "\169000255150Vote for team captain"
+		local txt
+		if cas.vote == 1 then
+			txt = "\169000255150Vote for next map"
+		elseif cas.vote == 2 then
+			txt = "\169000255150Vote for team captain"
 		end
 
-		parse("hudtxt2 " .. id .. " " .. textId .. ' "' .. text .. '" ' .. x .. " " .. y .. " 0 1 16")
+		parse("hudtxt2 " .. id .. " " .. txtid .. ' "' .. txt .. '" ' .. x .. " " .. y .. " 0 1 16")
 
 		for i = 1, #cas.votelist do
-			textId = textId + 1
+			txtid = txtid + 1
 			y = y + 18
 
-			text = cas.votelist[i]
-			if votetype == "votecpt" then
+			txt = cas.votelist[i]
+			if cas.vote == 2 then
 				if cas.con[cas.votelist[i]] == true then
-					text = player(cas.votelist[i], "name")
+					txt = player(cas.votelist[i], "name")
 				else
-					text = "---"
+					txt = "---"
 				end
 			end
 
 			if cas.voteopt[id] == i then
-				text = "\169150255000" .. i .. ". " .. text .. " (" .. cas.percentage(i) .. ")"
+				txt = "\169150255000" .. i .. ". " .. txt .. " (" .. cas.percentage(i) .. ")"
 			else
-				text = "\169000255150" .. i .. ". " .. text .. " (" .. cas.percentage(i) .. ")"
+				txt = "\169000255150" .. i .. ". " .. txt .. " (" .. cas.percentage(i) .. ")"
 			end
 
-			parse("hudtxt2 " .. id .. " " .. textId .. ' "' .. text .. '" ' .. x .. " " .. y .. " 0 1 16")
+			parse("hudtxt2 " .. id .. " " .. txtid .. ' "' .. txt .. '" ' .. x .. " " .. y .. " 0 1 16")
 		end
 
-		textId = textId + 1
+		txtid = txtid + 1
 		y = y + 18
-		local seconds = cas.votecountdown - os.time(os.date("!*t"))
-		text = "\169000255150Vote ends in \169150255000" .. cas.time(seconds)
-		parse("hudtxt2 " .. id .. " " .. textId .. ' "' .. text .. '" ' .. x .. " " .. y .. " 0 1 16")
+		local seconds = cas.votecountdown - os.time()
+		txt = "\169000255150Vote ends in \169150255000" .. cas.time(seconds)
+		parse("hudtxt2 " .. id .. " " .. txtid .. ' "' .. txt .. '" ' .. x .. " " .. y .. " 0 1 16")
 	end
 end
 
-function cas.startvote(votetype)
+function cas.startvote()
 	cas.votelist = {}
-	if votetype == "votemap" then
+	if cas.vote == 1 then
 		cas.votelist = cas.mappool
 		math.randomseed(os.time())
 		while #cas.votelist > 9 do
 			table.remove(cas.votelist, math.random(#cas.votelist))
 		end
-	elseif votetype == "votecpt" then
+	elseif cas.vote == 2 then
 		local limit = 1
 		local plist = player(0, "table")
 		for _, id in pairs(plist) do
@@ -365,25 +367,26 @@ function cas.startvote(votetype)
 		addbind(i)
 	end
 
-	timer(1000 * cas.voting_timelimit, "cas.endvote", votetype)
-	cas.votecountdown = os.time(os.date("!*t")) + cas.voting_timelimit
-	timer(100, "cas.showhud", votetype, 0)
+	timer(1000, "cas.votehud", "", 0)
+	timer(1000 * cas.voting_timelimit, "cas.endvote")
+	cas.votecountdown = os.time() + cas.voting_timelimit
+	cas.votehud()
 end
 
-function cas.endvote(votetype)
-	freetimer("cas.showhud", votetype)
+function cas.endvote()
+	freetimer("cas.votehud")
 	parse("sv_sound hajt/endvote.ogg")
 
 	local plist = player(0, "table")
 	for _, id in pairs(plist) do
-		local textId = 100
-		parse("hudtxt2 " .. id .. " " .. textId)
+		local txtid = 100
+		parse("hudtxt2 " .. id .. " " .. txtid)
 		for i = 1, #cas.votelist do
-			textId = textId + 1
-			parse("hudtxt2 " .. id .. " " .. textId)
+			txtid = txtid + 1
+			parse("hudtxt2 " .. id .. " " .. txtid)
 		end
-		textId = textId + 1
-		parse("hudtxt2 " .. id .. " " .. textId)
+		txtid = txtid + 1
+		parse("hudtxt2 " .. id .. " " .. txtid)
 
 		local opt = cas.voteopt[id]
 		if opt > 0 then
@@ -395,38 +398,36 @@ function cas.endvote(votetype)
 		removebind(i)
 	end
 
-	if votetype == "votemap" then
+	if cas.vote == 1 then
 		local val, key = cas.highest_val(cas.counted_votes)
 		if val == 0 then
 			msg("\169000255150Not enough players voted")
 		else
-			parse("map " .. cas.votelist[key])
+			msg("\169000255150Next map will be \169150255000" .. cas.votelist[key])
+			timer(500, "parse", "map " .. cas.votelist[key])
 		end
-	elseif votetype == "votecpt" then
-		local cpt1 = 0
-		local cpt2 = 0
+	elseif cas.vote == 2 then
 		local val, key = cas.highest_val(cas.counted_votes)
 		if val > 0 then
-			cpt1 = key
+			cas.cpt1 = key
 		end
 		cas.counted_votes[key] = 0
 		local val, key = cas.highest_val(cas.counted_votes)
 		if val > 0 then
-			cpt2 = key
+			cas.cpt2 = key
 		end
-		local plist = player(0, "table")
 		for _, id in pairs(plist) do
 			cas.permit = id
-			if id == cpt1 and cas.con[cpt1] == true then
+			if id == cas.cpt1 and cas.con[cas.cpt1] == true then
 				if player(id, "team") < 2 then
 					parse("makect " .. id)
 				end
-				msg(cas.nick(cpt1) .. " \169000255150became captain of team A")
-			elseif id == cpt2 and cas.con[cpt2] == true then
+				msg(cas.nick(id) .. " \169000255150became captain of team A")
+			elseif id == cas.cpt2 and cas.con[cas.cpt2] == true then
 				if player(id, "team") ~= 1 then
 					parse("maket " .. id)
 				end
-				msg(cas.nick(cpt2) .. " \169000255150became captain of team B")
+				msg(cas.nick(id) .. " \169000255150became captain of team B")
 			else
 				parse("makespec " .. id)
 			end
@@ -438,7 +439,7 @@ function cas.endvote(votetype)
 		cas.voteopt[i] = 0
 		cas.counted_votes[i] = 0
 	end
-	cas.vote = false
+	cas.vote = 0
 end
 
 function cas.addhooks()
@@ -449,10 +450,13 @@ end
 
 function cas.start1st()
 	cas.logs = {}
-	cas.logfile = os.time(os.date("!*t")) .. "-" .. map("name")
-	cas.status = "1st Half"
-	cas.round = 0
-
+	cas.logfile = os.time() .. "-" .. cas.map
+	cas.round = 1
+	cas.state = 1
+	cas.ct_score = 0
+	cas.tt_score = 0
+	cas.matchnow = true
+	cas.pnt("startmatch", os.time(), cas.map, cas.map_sha256, cas.version, cas.port)
 	local plist = player(0, "table")
 	for _, id in pairs(plist) do
 		local name = player(id, "name")
@@ -460,29 +464,19 @@ function cas.start1st()
 		local usgn = player(id, "usgn")
 		local steamid = player(id, "steamid")
 		local team = player(id, "team")
-		cas.pnt("j", id, name, ip, usgn, steamid, team)
+		cas.pnt("player", id, name, ip, usgn, steamid, team)
 	end
 end
 
 function cas.start2nd()
-	cas.logs = {}
-	cas.status = "2nd Half"
-	cas.round = cas.mr
-	timer(500, "parse", "setteamscores " .. cas.fh_ct .. " " .. cas.fh_tt)
-
-	local plist = player(0, "table")
-	for _, id in pairs(plist) do
-		local name = player(id, "name")
-		local ip = player(id, "ip")
-		local usgn = player(id, "usgn")
-		local steamid = player(id, "steamid")
-		local team = player(id, "team")
-		cas.pnt("j", id, name, ip, usgn, steamid, team)
-	end
+	cas.round = cas.fh_ct + cas.fh_tt + 1
+	cas.state = 3
+	cas.ct_score = 0
+	cas.tt_score = 0
 end
 
 function cas.showmoneyhud()
-	if tonumber(game("phase")) == 1 then
+	if game("phase") == 1 then
 		freetimer("cas.showmoneyhud")
 		for id = 1, 32 do
 			parse("hudtxt " .. id)
@@ -529,15 +523,6 @@ function cas.moneyhud(id, hudid, money, x, y)
 	parse("hudtxt2 " .. id .. " " .. hudid .. ' "\169' .. color .. "$" .. money .. '" ' .. x .. " " .. (y - 32) .. " 1")
 end
 
-function cas.sendlog()
-	local file = cas.logfile
-	local data = cas.fh_logs .. "," .. cas.sh_logs
-	local handle = io.popen("curl -d \"f=" .. file .. "&d=" .. data .. "\" -X POST http://cs2d.eu/api/parser2.php")
-	local result = handle:read("*a")
-	msg("\169150255000cs2d.eu/www/matches.php?id=" .. result)
-	handle:close()
-end
-
 function cas.loadmaps()
 	cas.maps = {}
 	for name in io.enumdir("maps") do
@@ -568,4 +553,39 @@ function cas.reload()
 	cas.loadmaps()
 	cas.votemap_minutes_over()
 	print("config loaded")
+end
+
+function cas.savelog()
+	local file = io.open(cas.path .. "logs/" .. cas.logfile .. ".txt", "a")
+	for i = 1, #cas.logs do
+		file:write(cas.logs[i] .. "\n")
+	end
+	file:close()
+	cas.logs = {}
+end
+
+function cas.upload()
+	local path = cas.path .. "logs/" .. cas.logfile .. ".txt"
+	local cmd = "curl -F \"f=@" .. path .. "\" http://cs2d.eu/api/recv.php"
+	local handle = io.popen(cmd)
+	local result = handle:read("*all")
+	handle:close()
+	if tonumber(result) == nil then
+		msg("\169000255150An unexpected error occurred while uploading")
+		print(result)
+	else
+		msg("\169000255150cs2d.eu/www/matches.php?id=" .. result)
+	end
+end
+
+function cas.setscores()
+	if cas.state == 1 then
+		parse("setteamscores " .. cas.tt_score .. " " .. cas.ct_score)
+	elseif cas.state == 2 then
+		parse("setteamscores " .. cas.fh_ct .. " " .. cas.fh_tt)
+	elseif cas.state == 3 then
+		local ct = cas.fh_tt + cas.ct_score
+		local tt = cas.fh_ct + cas.tt_score
+		parse("setteamscores " .. tt .. " " .. ct)
+	end
 end

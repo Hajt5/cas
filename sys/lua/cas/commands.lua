@@ -11,7 +11,7 @@ cas.aliases = {
 	["!swap"] = "!switch"
 }
 
-cas.commands["!help"] = {
+cas.cmds["!help"] = {
 	syntax = "",
 	maxarg = 0,
 	alert = false,
@@ -21,8 +21,8 @@ cas.commands["!help"] = {
 		for cmd in pairs(cas.commands) do
 			local syntax = ""
 			local alias = ""
-			if cas.commands[cmd]["syntax"] ~= "" then
-				syntax = " " .. cas.commands[cmd]["syntax"]
+			if cas.cmds[cmd]["syntax"] ~= "" then
+				syntax = " " .. cas.cmds[cmd]["syntax"]
 			end
 			local sc = cas.aliases[cmd]
 			if sc ~= nil then
@@ -34,7 +34,7 @@ cas.commands["!help"] = {
 	end
 }
 
-cas.commands["!maps"] = {
+cas.cmds["!maps"] = {
 	syntax = "",
 	maxarg = 0,
 	alert = false,
@@ -48,7 +48,7 @@ cas.commands["!maps"] = {
 	end
 }
 
-cas.commands["!kick"] = {
+cas.cmds["!kick"] = {
 	syntax = "<id>",
 	maxarg = 1,
 	alert = true,
@@ -67,7 +67,7 @@ cas.commands["!kick"] = {
 	end
 }
 
-cas.commands["!ban"] = {
+cas.cmds["!ban"] = {
 	syntax = "<id> <[duration]>",
 	maxarg = 2,
 	alert = true,
@@ -94,7 +94,7 @@ cas.commands["!ban"] = {
 	end
 }
 
-cas.commands["!mute"] = {
+cas.cmds["!mute"] = {
 	syntax = "<id>",
 	maxarg = 1,
 	alert = true,
@@ -115,7 +115,7 @@ cas.commands["!mute"] = {
 	end
 }
 
-cas.commands["!unmute"] = {
+cas.cmds["!unmute"] = {
 	syntax = "<id>",
 	maxarg = 1,
 	alert = true,
@@ -136,7 +136,7 @@ cas.commands["!unmute"] = {
 	end
 }
 
-cas.commands["!maket"] = {
+cas.cmds["!maket"] = {
 	syntax = "<id>",
 	maxarg = 1,
 	alert = true,
@@ -158,7 +158,7 @@ cas.commands["!maket"] = {
 	end
 }
 
-cas.commands["!makect"] = {
+cas.cmds["!makect"] = {
 	syntax = "<id>",
 	maxarg = 1,
 	alert = true,
@@ -180,7 +180,7 @@ cas.commands["!makect"] = {
 	end
 }
 
-cas.commands["!makespec"] = {
+cas.cmds["!makespec"] = {
 	syntax = "<id>",
 	maxarg = 1,
 	alert = true,
@@ -202,7 +202,7 @@ cas.commands["!makespec"] = {
 	end
 }
 
-cas.commands["!fow"] = {
+cas.cmds["!fow"] = {
 	syntax = "<mode>",
 	maxarg = 1,
 	alert = true,
@@ -222,7 +222,7 @@ cas.commands["!fow"] = {
 	end
 }
 
-cas.commands["!freezetime"] = {
+cas.cmds["!freezetime"] = {
 	syntax = "<seconds>",
 	maxarg = 1,
 	alert = true,
@@ -243,7 +243,7 @@ cas.commands["!freezetime"] = {
 	end
 }
 
-cas.commands["!roundtime"] = {
+cas.cmds["!roundtime"] = {
 	syntax = "<minutes>",
 	maxarg = 1,
 	alert = true,
@@ -263,7 +263,7 @@ cas.commands["!roundtime"] = {
 	end
 }
 
-cas.commands["!startmoney"] = {
+cas.cmds["!startmoney"] = {
 	syntax = "<money>",
 	maxarg = 1,
 	alert = true,
@@ -283,7 +283,7 @@ cas.commands["!startmoney"] = {
 	end
 }
 
-cas.commands["!map"] = {
+cas.cmds["!map"] = {
 	syntax = "<map>",
 	maxarg = false,
 	alert = true,
@@ -300,7 +300,7 @@ cas.commands["!map"] = {
 	end
 }
 
-cas.commands["!password"] = {
+cas.cmds["!password"] = {
 	syntax = "<[password]>",
 	maxarg = 1,
 	alert = true,
@@ -317,7 +317,7 @@ cas.commands["!password"] = {
 	end
 }
 
-cas.commands["!broadcast"] = {
+cas.cmds["!broadcast"] = {
 	syntax = "<message>",
 	maxarg = false,
 	alert = false,
@@ -330,14 +330,14 @@ cas.commands["!broadcast"] = {
 	end
 }
 
-cas.commands["!live"] = {
+cas.cmds["!live"] = {
 	syntax = "",
 	maxarg = 0,
 	alert = true,
 	admin = true,
 	func = function(id, arguments)
 		if cas.between then
-			return "Wait for next round"
+			return "You have to wait until next round"
 		end
 		cas.knives = false
 		cas.warmup = false
@@ -345,21 +345,21 @@ cas.commands["!live"] = {
 		parse("mp_freezetime " .. cas.ft)
 		parse("mp_randomspawn 0")
 		parse("restart")
-		if cas.mixmatch == 0 then
+		if cas.mixmatch == false then
 			return
 		end
 		local plist = player(0, "table")
-		if #plist >= cas.required and cas.status == nil then
+		if #plist >= cas.required and cas.state == 0 then
 			cas.start1st()
-		elseif cas.status == "1st Half" then
+		elseif cas.state == 1 then
 			cas.start1st()
-		elseif cas.status == "Halftime" or cas.status == "2nd Half" then
+		elseif cas.state == 2 or cas.state == 3 then
 			cas.start2nd()
 		end
 	end
 }
 
-cas.commands["!knife"] = {
+cas.cmds["!knife"] = {
 	syntax = "",
 	maxarg = 0,
 	alert = true,
@@ -378,7 +378,7 @@ cas.commands["!knife"] = {
 	end
 }
 
-cas.commands["!warmup"] = {
+cas.cmds["!warmup"] = {
 	syntax = "<wpn,...>",
 	maxarg = 1,
 	alert = true,
@@ -433,7 +433,7 @@ cas.commands["!warmup"] = {
 	end
 }
 
-cas.commands["!resetscore"] = {
+cas.cmds["!resetscore"] = {
 	syntax = "",
 	maxarg = 0,
 	alert = false,
@@ -447,7 +447,7 @@ cas.commands["!resetscore"] = {
 	end
 }
 
-cas.commands["!specall"] = {
+cas.cmds["!specall"] = {
 	syntax = "",
 	maxarg = 0,
 	alert = true,
@@ -468,7 +468,7 @@ cas.commands["!specall"] = {
 	end
 }
 
-cas.commands["!lock"] = {
+cas.cmds["!lock"] = {
 	syntax = "",
 	maxarg = 0,
 	alert = true,
@@ -481,7 +481,7 @@ cas.commands["!lock"] = {
 	end
 }
 
-cas.commands["!unlock"] = {
+cas.cmds["!unlock"] = {
 	syntax = "",
 	maxarg = 0,
 	alert = true,
@@ -494,7 +494,7 @@ cas.commands["!unlock"] = {
 	end
 }
 
-cas.commands["!switch"] = {
+cas.cmds["!switch"] = {
 	syntax = "",
 	maxarg = 0,
 	alert = true,
@@ -504,7 +504,7 @@ cas.commands["!switch"] = {
 	end
 }
 
-cas.commands["!reroute"] = {
+cas.cmds["!reroute"] = {
 	syntax = "<address>",
 	maxarg = 1,
 	alert = true,
@@ -518,37 +518,37 @@ cas.commands["!reroute"] = {
 	end
 }
 
-cas.commands["!votecpt"] = {
+cas.cmds["!votecpt"] = {
 	syntax = "",
 	maxarg = 0,
 	alert = true,
 	admin = true,
 	func = function(id, arguments)
-		if cas.vote == true then
+		if cas.vote > 0 then
 			return "Vote is already in progress"
 		end
-		cas.vote = true
+		cas.vote = 2
 		parse("sv_sound hajt/countdown.ogg")
-		timer(3000, "cas.startvote", "votecpt")
+		timer(3000, "cas.startvote")
 	end
 }
 
-cas.commands["!votemap"] = {
+cas.cmds["!votemap"] = {
 	syntax = "",
 	maxarg = 0,
 	alert = true,
 	admin = true,
 	func = function(id, arguments)
-		if cas.vote == true then
+		if cas.vote > 0 then
 			return "Vote is already in progress"
 		end
-		cas.vote = true
+		cas.vote = 1
 		parse("sv_sound hajt/countdown.ogg")
-		timer(3000, "cas.startvote", "votemap")
+		timer(3000, "cas.startvote")
 	end
 }
 
-cas.commands["!reload"] = {
+cas.cmds["!reload"] = {
 	syntax = "",
 	maxarg = 0,
 	alert = true,

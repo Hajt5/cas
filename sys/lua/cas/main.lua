@@ -25,12 +25,16 @@ for id = 1, 32 do
 end
 cas.logs = {}
 cas.votemap_minutes_countdown = 0
-cas.round = 0
+cas.state = 0
+cas.round = 1
 cas.ct_score = 0
 cas.tt_score = 0
 cas.fh_ct = 0
 cas.fh_tt = 0
-cas.commands = {}
+cas.cpt1 = 0
+cas.cpt2 = 0
+cas.cmds = {}
+cas.matchnow = false
 cas.between = false
 cas.lock = false
 cas.knives = false
@@ -39,20 +43,24 @@ cas.warmup_weapons = {}
 cas.warmup_armor = 0
 cas.permit = 0
 cas.recentmvp = 0
-cas.vote = false
+cas.vote = 0
 cas.votecountdown = 0
 cas.mutelist = {}
 cas.adminlist = {}
-cas.mixmatch = 0
+cas.spawn_16k = false
+cas.mixmatch = false
 cas.required = 10
 cas.mr = 15
-cas.upload_logs = 1
+cas.upload_logs = true
 cas.votemap_rounds = 0
 cas.votemap_minutes = 0
 cas.voting_timelimit = 10
 cas.mappool = {}
-cas.check_files = {}
+cas.version = "v1.1-beta"
 cas.ft = tonumber(game("mp_freezetime"))
+cas.map = map("name")
+cas.map_sha256 = checksumfile("maps/" .. cas.map .. ".map")
+cas.port = game("port")
 dofile(cas.path .. "functions.lua")
 dofile(cas.path .. "commands.lua")
 dofile(cas.path .. "hooks.lua")

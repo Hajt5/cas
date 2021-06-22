@@ -5,16 +5,13 @@ function cas.hook.join(id)
 	local usgn = player(id, "usgn")
 	local steamid = player(id, "steamid")
 
+	cas.cmsg2(id, "\169000255150Competitive Admin Script \169150255000" .. cas.version)
 	msg2(id, "\169000255150Welcome on the server \169150255000" .. cas.escape(name))
 	parse("sv_sound2 " .. id .. " hajt/welcome.ogg")
 
-	for file in pairs(cas.check_files) do
-		reqcld(id, 4, file)
-	end
-
 	if cas.in_tbl(cas.adminlist, usgn) ~= false then
 		cas.admin[id] = true
-		msg2(id, "\169000255150You are logged in as \169150255000admin")
+		msg2(id, "\169000255150You are logged in as \169150255000Admin")
 	end
 
 	if cas.in_tbl(cas.mutelist, usgn) ~= false then
@@ -22,7 +19,7 @@ function cas.hook.join(id)
 	end
 
 	cas.hud(id)
-	cas.pnt("j", id, name, ip, usgn, steamid, 0)
+	cas.pnt("join", id, name, ip, usgn, steamid)
 end
 
 function cas.hook.say(id, message)
@@ -45,7 +42,7 @@ function cas.hook.leave(id, reason)
 	cas.con[id] = false
 	cas.voteopt[id] = 0
 	cas.counted_votes[id] = 0
-	cas.pnt("l", id, reason, cas.damage[id])
+	cas.pnt("leave", id, reason, cas.damage[id])
 end
 
 function cas.hook.team(id, team)
@@ -53,23 +50,13 @@ function cas.hook.team(id, team)
 		msg2(id, "\169000255150Teams are locked")
 		return 1
 	end
-	cas.pnt("t", id, team)
+	cas.pnt("team", id, team)
 end
 
-function cas.hook.clientdata(id, mode, data1, data2)
-	if mode ~= 4 then
-		return
-	end
-
-	if cas.check_files[data1] ~= data2 then
-		cas.kick(id, "Modified file " .. data1 .. " " .. data2)
-	end
-end
-
-function cas.hook.startround(mode)
+function cas.hook.startround_prespawn(mode)
 	timer(100, "cas.showmoneyhud", "", 0)
 	cas.between = false
-	cas.round = cas.round + 1
+	cas.setscores()
 
 	if cas.knives == true then
 		local itemlist = item(0, "table")
@@ -80,22 +67,42 @@ function cas.hook.startround(mode)
 
 	local plist = player(0, "table")
 	for _, id in pairs(plist) do
-		if cas.always16k == true then
-			parse("setmoney " .. id .. " 16000")
-		end
-		if cas.status == "1st Half" or cas.status == "2nd Half" then
-			cas.pntdamage(id)
+		if cas.state == 1 or cas.state == 3 then
+			cas.dmg(id)
 		end
 		cas.hud(id)
 		cas.damage[id] = 0
 		cas.mvp[id] = player(id, "mvp")
 	end
 
+	if cas.matchnow == true then
+		cas.savelog()
+	end
+	cas.pnt("startround", cas.round)
+end
+
+function cas.hook.endround(mode)
+	cas.between = true
+
+	if mode == 3 then
+		return
+	end
+
+	local plist = player(0, "table")
+	if mode == 4 or mode == 5 then
+		cas.ct_score = 0
+		cas.tt_score = 0
+		for _, id in pairs(plist) do
+			cas.total[id] = 0
+		end
+		return
+	end
+
 	if cas.votemap_rounds > 0 then
 		if cas.votemap_rounds == cas.round then
-			cas.vote = true
+			cas.vote = 1
 			parse("sv_sound hajt/countdown.ogg")
-			timer(3000, "cas.startvote", "votemap")
+			timer(3000, "cas.startvote")
 			timer(18500, "parse", "restart")
 		else
 			local txt = cas.votemap_rounds - cas.round
@@ -106,28 +113,6 @@ function cas.hook.startround(mode)
 			end
 			msg("\169000255150Vote for next map will start in \169150255000" .. txt)
 		end
-	end
-
-	cas.pnt("sr", cas.round)
-end
-
-function cas.hook.endround(mode)
-	cas.between = true
-
-	if mode == 3 then
-		cas.round = cas.round - 1
-		return
-	end
-
-	local plist = player(0, "table")
-	if mode == 4 or mode == 5 then
-		cas.round = 0
-		cas.ct_score = 0
-		cas.tt_score = 0
-		for _, id in pairs(plist) do
-			cas.total[id] = 0
-		end
-		return
 	end
 
 	for _, id in pairs(plist) do
@@ -143,43 +128,43 @@ function cas.hook.endround(mode)
 			cas.recentmvp = id
 		end
 	end
-
+	
 	local val, key = cas.highest_val(cas.damage)
 	if val > 0 then
 		msg(cas.nick(key) .. " \169000255150highest damage \169150255000" .. val .. " HP")
 	end
 
-	if cas.round > 1 and cas.round > cas.mr then
+	if cas.round ~= 1 or cas.round ~= cas.mr + 1 then
 		val, key = cas.highest_val(cas.total)
 		if val > 0 then
 			msg(cas.nick(key) .. " \169000255150highest total damage \169150255000" .. val .. " HP")
 		end
 	end
 
-	if cas.status == "1st Half" or cas.status == "2nd Half" then
-		if cas.in_tbl({1, 10, 12, 20, 30, 40, 50, 60}, mode) then
-			cas.tt_score = cas.tt_score + 1
-		elseif cas.in_tbl({2, 11, 21, 22, 31, 41, 51, 61}, mode) then
-			cas.ct_score = cas.ct_score + 1
-		end
+	if cas.in_tbl({1, 10, 12, 20, 30, 40, 50, 60}, mode) then
+		cas.tt_score = cas.tt_score + 1
+	else
+		cas.ct_score = cas.ct_score + 1
 	end
 
-	if cas.status == "1st Half" then
-		if cas.ct_score + cas.tt_score == cas.mr then
-			cas.fh_ct = cas.ct_score
-			cas.fh_tt = cas.tt_score
-			cas.status = "Halftime"
-			timer(500, "cas.swap")
-			for _, id in pairs(plist) do
-				cas.pntdamage(id)
-				cas.hud(id)
-			end
-			cas.pnt("er", mode, cas.recentmvp)
-			cas.pnt("ht")
-			cas.fh_logs = table.concat(cas.logs, ",")
-			return
+	if cas.state == 1 and cas.round == cas.mr then
+		cas.fh_ct = cas.ct_score
+		cas.fh_tt = cas.tt_score
+		cas.state = 2
+		cas.round = cas.round + 1
+		timer(1000, "cas.swap")
+		for _, id in pairs(plist) do
+			cas.dmg(id)
+			cas.hud(id)
 		end
-	elseif cas.status == "2nd Half" then
+		cas.pnt("endround", mode, cas.recentmvp)
+		cas.pnt("halftime")
+		timer(1000, "cas.setscores")
+		cas.savelog()
+		return
+	end
+
+	if cas.state == 3 then
 		local ct = cas.fh_tt + cas.ct_score
 		local tt = cas.fh_ct + cas.tt_score
 		local gg = cas.mr + 1
@@ -188,21 +173,30 @@ function cas.hook.endround(mode)
 			cas.tt_score = 0
 			cas.fh_ct = 0
 			cas.fh_tt = 0
-			cas.status = nil
+			cas.state = 0
+			cas.cpt1 = 0
+			cas.cpt2 = 0
+			cas.round = cas.round + 1
 			for _, id in pairs(plist) do
-				cas.pntdamage(id)
+				cas.dmg(id)
 				cas.hud(id)
 			end
-			cas.pnt("er", mode, cas.recentmvp)
-			cas.sh_logs = table.concat(cas.logs, ",")
-			if cas.upload_logs == 1 then
-				timer(1000, "cas.sendlog")
+			cas.pnt("endround", mode, cas.recentmvp)
+			cas.pnt("endmatch", os.time())
+			cas.setscores()
+			cas.savelog()
+			if cas.upload_logs == true then
+				timer(999, "parse", "msg \"\169000255150Uploading log file...\"")
+				timer(1000, "cas.upload")
 			end
+			cas.matchnow = false
 			return
 		end
 	end
 
-	cas.pnt("er", mode, cas.recentmvp)
+	cas.round = cas.round + 1
+	cas.pnt("endround", mode, cas.recentmvp)
+	cas.setscores()
 end
 
 function cas.hook.buy(id, weapon)
@@ -211,13 +205,22 @@ function cas.hook.buy(id, weapon)
 	end
 end
 
-function cas.hook.bombplant(id)
+function cas.hook.bombplant(id, x, y)
 	if cas.knives == true then
 		return 1
 	end
+	cas.pnt("bombplant", id, x, y)
+end
+
+function cas.hook.bombdefuse(id)
+	cas.pnt("bombdefuse", id)
 end
 
 function cas.hook.spawn(id)
+	if cas.spawn_16k == true then
+		parse("setmoney " .. id .. " 16000")
+	end
+
 	if cas.knives == true then
 		return "x"
 	end
@@ -239,7 +242,7 @@ function cas.hook.spawn(id)
 		end
 	end
 
-	cas.pnt("s", id)
+	cas.pnt("spawn", id)
 end
 
 function cas.hook.hit(id, source, weapon, hpdmg)
@@ -250,9 +253,9 @@ function cas.hook.hit(id, source, weapon, hpdmg)
 end
 
 function cas.hook.kill(killer, victim, weapon, x, y, object, assistant)
-	local killer_x = math.floor(player(killer, "x"))
-	local killer_y = math.floor(player(killer, "y"))
-	cas.pnt("k", killer, killer_x, killer_y, weapon, victim, x, y, assistant)
+	local kx = math.floor(player(killer, "x"))
+	local ky = math.floor(player(killer, "y"))
+	cas.pnt("kill", killer, kx, ky, weapon, victim, x, y, assistant)
 end
 
 function cas.hook.clientsetting(id)
@@ -262,7 +265,7 @@ end
 function cas.hook.name(id, oldname, newname, forced)
 	if forced == 1 then
 		msg(cas.nick(id) .. " \169000255150changed name to \169150255000" .. cas.escape(newname))
-		cas.pnt("n", id, newname)
+		cas.pnt("name", id, newname)
 		return 0
 	end
 	parse("setname " .. id .. ' "' .. newname .. '" 1')
@@ -270,11 +273,12 @@ function cas.hook.name(id, oldname, newname, forced)
 end
 
 function cas.hook.key(id, key, state)
-	if state == 0 or cas.voteopt[id] > 0 then
+	if state == 0 or cas.vote == 0 or cas.voteopt[id] > 0 then
 		return
 	end
 	parse("sv_sound2 " .. id .. " hajt/menuselect.ogg")
 	cas.voteopt[id] = tonumber(key)
+	cas.votehud()
 end
 
 function cas.hook.rcon(cmds)
