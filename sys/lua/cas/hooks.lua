@@ -56,7 +56,6 @@ end
 function cas.hook.startround_prespawn(mode)
 	timer(100, "cas.showmoneyhud", "", 0)
 	cas.between = false
-	cas.setscores()
 
 	if cas.knives == true then
 		local itemlist = item(0, "table")
@@ -158,7 +157,6 @@ function cas.hook.endround(mode)
 		end
 		cas.pnt("endround", mode, cas.recentmvp)
 		cas.pnt("halftime")
-		timer(1000, "cas.setscores")
 		cas.savelog()
 		return
 	end
@@ -181,7 +179,6 @@ function cas.hook.endround(mode)
 			end
 			cas.pnt("endround", mode, cas.recentmvp)
 			cas.pnt("endmatch", os.time())
-			cas.setscores()
 			cas.savelog()
 			if cas.upload_logs == true then
 				timer(999, "parse", "msg \"\169000255150Uploading log file...\"")
@@ -193,7 +190,6 @@ function cas.hook.endround(mode)
 	end
 
 	cas.pnt("endround", mode, cas.recentmvp)
-	cas.setscores()
 end
 
 function cas.hook.buy(id, weapon)

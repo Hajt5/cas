@@ -477,6 +477,7 @@ function cas.start2nd()
 	cas.state = 3
 	cas.ct_score = 0
 	cas.tt_score = 0
+	timer(500, "parse", "setteamscores " .. cas.fh_ct .. " " .. cas.fh_tt)
 end
 
 function cas.showmoneyhud()
@@ -577,17 +578,5 @@ function cas.upload()
 		print(result)
 	else
 		msg("\169000255150cs2d.eu/www/matches.php?id=" .. result)
-	end
-end
-
-function cas.setscores()
-	if cas.state == 1 then
-		parse("setteamscores " .. cas.tt_score .. " " .. cas.ct_score)
-	elseif cas.state == 2 then
-		parse("setteamscores " .. cas.fh_ct .. " " .. cas.fh_tt)
-	elseif cas.state == 3 then
-		local ct = cas.fh_tt + cas.ct_score
-		local tt = cas.fh_ct + cas.tt_score
-		parse("setteamscores " .. tt .. " " .. ct)
 	end
 end
