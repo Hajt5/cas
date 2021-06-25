@@ -125,13 +125,13 @@ function cas.hud(id)
 	elseif cas.mixmatch == true then
 		if cas.state == 1 then
 			txt1 ="1st Half"
-			txt2 = "Round " .. cas.round .. "/" .. cas.mr * 2
+			txt2 = "Round " .. cas.ct_score + cas.tt_score + 1 .. "/" .. cas.mr * 2
 		elseif cas.state == 2 then
 			txt1 = "Halftime"
 			txt2 = "Prepare to fight"
 		elseif cas.state == 3 then
 			txt1 = "2nd Half"
-			txt2 = "Round " .. cas.round .. "/" .. cas.mr * 2
+			txt2 = "Round " .. cas.fh_tt + cas.ct_score + cas.fh_ct + cas.tt_score + 1 .. "/" .. cas.mr * 2
 		else
 			txt1 = "Match not started"
 			txt2 = "Requires " .. cas.required .. " players to start"
@@ -455,7 +455,6 @@ end
 function cas.start1st()
 	cas.logs = {}
 	cas.logfile = os.time() .. "-" .. cas.map
-	cas.round = 1
 	cas.state = 1
 	cas.ct_score = 0
 	cas.tt_score = 0
@@ -473,11 +472,9 @@ function cas.start1st()
 end
 
 function cas.start2nd()
-	cas.round = cas.fh_ct + cas.fh_tt + 1
 	cas.state = 3
 	cas.ct_score = 0
 	cas.tt_score = 0
-	timer(500, "parse", "setteamscores " .. cas.fh_ct .. " " .. cas.fh_tt)
 end
 
 function cas.showmoneyhud()
@@ -578,5 +575,17 @@ function cas.upload()
 		print(result)
 	else
 		msg("\169000255150cs2d.eu/www/matches.php?id=" .. result)
+	end
+end
+
+function cas.setscores()
+	if cas.state == 1 then
+		parse("setteamscores " .. cas.tt_score .. " " .. cas.ct_score)
+	elseif cas.state == 2 then
+		parse("setteamscores " .. cas.fh_ct .. " " .. cas.fh_tt)
+	elseif cas.state == 3 then
+		parse("setteamscores " .. cas.fh_ct + cas.tt_score .. " " .. cas.fh_tt + cas.ct_score)
+	else
+		parse("setteamscores " .. cas.tt_score .. " " .. cas.ct_score)
 	end
 end

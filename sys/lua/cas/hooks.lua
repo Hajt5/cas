@@ -77,7 +77,8 @@ function cas.hook.startround_prespawn(mode)
 	if cas.matchnow == true then
 		cas.savelog()
 	end
-	cas.pnt("startround", cas.round)
+	cas.pnt("startround", cas.ct_score + cas.tt_score)
+	timer(1, "cas.setscores")
 end
 
 function cas.hook.endround(mode)
@@ -97,13 +98,19 @@ function cas.hook.endround(mode)
 		return
 	end
 
+	if cas.in_tbl({1, 10, 12, 20, 30, 40, 50, 60}, mode) then
+		cas.tt_score = cas.tt_score + 1
+	else
+		cas.ct_score = cas.ct_score + 1
+	end
+
 	if cas.votemap_rounds > 0 then
-		if cas.votemap_rounds == cas.round then
+		if cas.votemap_rounds == cas.ct_score + cas.tt_score then
 			cas.vote = 1
 			parse("sv_sound hajt/countdown.ogg")
 			timer(3000, "cas.startvote")
 		else
-			local txt = cas.votemap_rounds - cas.round
+			local txt = cas.votemap_rounds - cas.ct_score + cas.tt_score
 			if txt == 1 then
 				txt = "next round"
 			else
@@ -126,27 +133,20 @@ function cas.hook.endround(mode)
 			cas.recentmvp = id
 		end
 	end
-	
+
 	local val, key = cas.highest_val(cas.damage)
 	if val > 0 then
 		msg(cas.nick(key) .. " \169000255150highest damage \169150255000" .. val .. " HP")
 	end
 
-	if cas.round ~= 1 and cas.round ~= cas.mr + 1 then
+	if cas.tt_score + cas.ct_score > 0 then
 		val, key = cas.highest_val(cas.total)
 		if val > 0 then
 			msg(cas.nick(key) .. " \169000255150highest total damage \169150255000" .. val .. " HP")
 		end
 	end
 
-	cas.round = cas.round + 1
-	if cas.in_tbl({1, 10, 12, 20, 30, 40, 50, 60}, mode) then
-		cas.tt_score = cas.tt_score + 1
-	else
-		cas.ct_score = cas.ct_score + 1
-	end
-
-	if cas.state == 1 and cas.round == cas.mr then
+	if cas.state == 1 and cas.tt_score + cas.ct_score == cas.mr then
 		cas.fh_ct = cas.ct_score
 		cas.fh_tt = cas.tt_score
 		cas.state = 2
@@ -157,6 +157,7 @@ function cas.hook.endround(mode)
 		end
 		cas.pnt("endround", mode, cas.recentmvp)
 		cas.pnt("halftime")
+		cas.setscores()
 		cas.savelog()
 		return
 	end
@@ -164,8 +165,7 @@ function cas.hook.endround(mode)
 	if cas.state == 3 then
 		local ct = cas.fh_tt + cas.ct_score
 		local tt = cas.fh_ct + cas.tt_score
-		local gg = cas.mr + 1
-		if ct == cas.mr and tt == cas.mr or ct == gg or tt == gg then
+		if ct == cas.mr and tt == cas.mr or ct == cas.mr + 1 or tt == cas.mr + 1 then
 			cas.ct_score = 0
 			cas.tt_score = 0
 			cas.fh_ct = 0
@@ -179,6 +179,7 @@ function cas.hook.endround(mode)
 			end
 			cas.pnt("endround", mode, cas.recentmvp)
 			cas.pnt("endmatch", os.time())
+			cas.setscores()
 			cas.savelog()
 			if cas.upload_logs == true then
 				timer(999, "parse", "msg \"\169000255150Uploading log file...\"")
@@ -189,6 +190,7 @@ function cas.hook.endround(mode)
 		end
 	end
 
+	cas.setscores()
 	cas.pnt("endround", mode, cas.recentmvp)
 end
 

@@ -26,7 +26,6 @@ end
 cas.logs = {}
 cas.votemap_minutes_countdown = 0
 cas.state = 0
-cas.round = 1
 cas.ct_score = 0
 cas.tt_score = 0
 cas.fh_ct = 0
@@ -56,7 +55,7 @@ cas.votemap_rounds = 0
 cas.votemap_minutes = 0
 cas.voting_timelimit = 10
 cas.mappool = {}
-cas.version = "v1.4-beta"
+cas.version = "v1.5-beta"
 cas.ft = tonumber(game("mp_freezetime"))
 cas.map = map("name")
 cas.map_sha256 = checksumfile("maps/" .. cas.map .. ".map")
