@@ -103,7 +103,6 @@ function cas.hook.endround(mode)
 			cas.vote = 1
 			parse("sv_sound hajt/countdown.ogg")
 			timer(3000, "cas.startvote")
-			timer(18500, "parse", "restart")
 		else
 			local txt = cas.votemap_rounds - cas.round
 			if txt == 1 then
@@ -141,6 +140,7 @@ function cas.hook.endround(mode)
 		end
 	end
 
+	cas.round = cas.round + 1
 	if cas.in_tbl({1, 10, 12, 20, 30, 40, 50, 60}, mode) then
 		cas.tt_score = cas.tt_score + 1
 	else
@@ -151,7 +151,6 @@ function cas.hook.endround(mode)
 		cas.fh_ct = cas.ct_score
 		cas.fh_tt = cas.tt_score
 		cas.state = 2
-		cas.round = cas.round + 1
 		timer(1000, "cas.swap")
 		for _, id in pairs(plist) do
 			cas.dmg(id)
@@ -176,7 +175,6 @@ function cas.hook.endround(mode)
 			cas.state = 0
 			cas.cpt1 = 0
 			cas.cpt2 = 0
-			cas.round = cas.round + 1
 			for _, id in pairs(plist) do
 				cas.dmg(id)
 				cas.hud(id)
@@ -194,7 +192,6 @@ function cas.hook.endround(mode)
 		end
 	end
 
-	cas.round = cas.round + 1
 	cas.pnt("endround", mode, cas.recentmvp)
 	cas.setscores()
 end

@@ -404,11 +404,12 @@ function cas.endvote()
 	if cas.vote == 1 then
 		local val, key = cas.highest_val(cas.counted_votes)
 		if val == 0 then
-			msg("\169000255150Not enough players voted")
-		else
-			msg("\169000255150Next map will be \169150255000" .. cas.votelist[key])
-			timer(500, "parse", "map " .. cas.votelist[key])
+			msg("\169000255150Nobody voted")
+			math.randomseed(os.time())
+			key = math.random(1, #cas.votelist)
 		end
+		msg("\169000255150Next map will be \169150255000" .. cas.votelist[key])
+		timer(1000, "parse", "map " .. cas.votelist[key])
 	elseif cas.vote == 2 then
 		local val, key = cas.highest_val(cas.counted_votes)
 		if val > 0 then
