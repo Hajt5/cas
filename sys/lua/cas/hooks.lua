@@ -110,7 +110,7 @@ function cas.hook.endround(mode)
 			parse("sv_sound hajt/countdown.ogg")
 			timer(3000, "cas.startvote")
 		else
-			local txt = cas.votemap_rounds - cas.ct_score + cas.tt_score
+			local txt = cas.votemap_rounds - (cas.ct_score + cas.tt_score)
 			if txt == 1 then
 				txt = "next round"
 			else
